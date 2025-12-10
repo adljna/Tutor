@@ -51,40 +51,15 @@
             margin-bottom: 20px;
         }
 
-        .tab.akan-datang {
-            border-color: #ffcfac;
-            color: #ffcfac;
-        }
+        .tab.akan-datang { border-color: #ffcfac; color: #ffcfac; }
+        .tab.berlangsung { border-color: #bfc7ff; color: #bfc7ff; }
+        .tab.lampau { border-color: #FF687F; color: #FF687F; }
 
-        .tab.berlangsung {
-            border-color: #bfc7ff;
-            color: #bfc7ff;
-        }
+        .tab.active.akan-datang { background-color: #ffcfac; color: white; }
+        .tab.active.berlangsung { background-color: #bfc7ff; color: white; }
+        .tab.active.lampau { background-color: #FF687F; color: white; }
 
-        .tab.lampau {
-            border-color: #FF687F;
-            color: #FF687F;
-        }
-
-        .tab.active.akan-datang {
-            background-color: #ffcfac;
-            color: white;
-        }
-
-        .tab.active.berlangsung {
-            background-color: #bfc7ff;
-            color: white;
-        }
-
-        .tab.active.lampau {
-            background-color: #FF687F;
-            color: white;
-        }
-
-        .tab:hover {
-            opacity: 0.85;
-            transform: scale(1.03);
-        }
+        .tab:hover { opacity: 0.85; transform: scale(1.03); }
 
         .card-detail-sesi {
             background-size: cover;
@@ -123,22 +98,9 @@
             margin-bottom: 40px;
         }
 
-        .nama-tutor {
-            font-size: 22px;
-            font-weight: 600;
-            color: #212529;
-        }
-
-        .nama-matkul {
-            margin-top: -2px;
-            font-size: 16px;
-            color: #212529;
-        }
-
-        .hari-tanggal {
-            font-size: 15px;
-            color: #636363;
-        }
+        .nama-tutor { font-size: 22px; font-weight: 600; color: #212529; }
+        .nama-matkul { font-size: 16px; color: #212529; }
+        .hari-tanggal { font-size: 15px; color: #636363; }
 
         .btn-detail {
             position: absolute;
@@ -182,35 +144,37 @@
             <a href="/aktivitas-lampau" class="tab lampau">Lampau</a>
         </div>
 
-        {{-- CARD 1 --}}
-        <div class="card-detail-sesi programming">
-            <img src="{{ asset('foto-tutor.jpg') }}" class="profile-img" alt="Foto Profil">
+        {{-- LOOPING DATABASE --}}
+        @forelse ($akanDatang as $item)
+            <div class="card-detail-sesi programming">
 
-            <div class="details">
-                <h4 class="nama-tutor m-0">Khalila</h4>
-                <p class="nama-matkul m-0">Dasar Pemrograman</p>
-                <p class="hari-tanggal m-0">4 Agustus 2025, 16.00 WIB</p>
+                {{-- FOTO TUTOR --}}
+                <img src="{{ asset($item->fototutor ?? 'foto-tutor.jpg') }}"
+                     class="profile-img"
+                     alt="Foto Tutor">
 
-                <a href="/aktivitas/detail-akan-datang">
-                    <button class="btn-detail">Detail</button>
-                </a>
+                <div class="details">
+
+                    {{-- NAMA TUTOR --}}
+                    <h4 class="nama-tutor m-0">{{ $item->namatutor }}</h4>
+
+                    {{-- MATAKULIAH --}}
+                    <p class="nama-matkul m-0">{{ $item->matkul }}</p>
+
+                    {{-- TANGGAL + JAM --}}
+                    <p class="hari-tanggal m-0">
+                        {{ \Carbon\Carbon::parse($item->tanggal)->translatedFormat('d F Y') }},
+                        {{ $item->jam }} WIB
+                    </p>
+
+                    <a href="/aktivitas/detail-akan-datang">
+                        <button class="btn-detail">Detail</button>
+                    </a>
+                </div>
             </div>
-        </div>
-
-        {{-- CARD 2 --}}
-        <div class="card-detail-sesi ux">
-            <img src="{{ asset('foto-tutor2.jpg') }}" class="profile-img" alt="Foto Profil">
-
-            <div class="details">
-                <h4 class="nama-tutor m-0">Lea</h4>
-                <p class="nama-matkul m-0">UX Design</p>
-                <p class="hari-tanggal m-0">7 Agustus 2025, 18.00 WIB</p>
-
-                <a href="/aktivitas/detail-akan-datang">
-                    <button class="btn-detail">Detail</button>
-                </a>
-            </div>
-        </div>
+        @empty
+            <p class="text-center text-muted">Belum ada aktivitas yang akan datang.</p>
+        @endforelse
 
     </div>
 

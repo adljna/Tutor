@@ -3,26 +3,16 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SesiController;
 use App\Http\Controllers\pesananController;
-use App\Http\Controllers\kategoriController;
-use App\Http\Controllers\laporanmasalahController;
-use App\Http\Controllers\matakuliahController;
-use App\Http\Controllers\refundController;
-use App\Http\Controllers\reviewController;
-use App\Http\Controllers\tutorController;
-use App\Http\Controllers\userController;
-
 
 /*
 |--------------------------------------------------------------------------
-| Web Routes
+| WEB ROUTES
 |--------------------------------------------------------------------------
-| Di sini Anda dapat mendaftarkan route web untuk aplikasi Anda.
 */
 
-
-/* =======================
-   DETAIL SESI
-======================= */
+/* ============================
+   DETAIL SESI (HALAMAN DETAIL)
+============================ */
 Route::get('/aktivitas/detail-akan-datang', [SesiController::class, 'detailAkanDatang'])
     ->name('sesi.detail.akan');
 
@@ -33,22 +23,26 @@ Route::get('/aktivitas/detail-lampau', [SesiController::class, 'detailLampau'])
     ->name('sesi.detail.lampau');
 
 
-/* =======================
-   AKTIVITAS LIST
-======================= */
-Route::get('/aktivitas', [pesananController::class, 'index'])
+/* ============================
+   LIST AKTIVITAS (AKAN / BERLANGSUNG / LAMPAU)
+============================ */
+
+// Halaman Aktivitas → Akan Datang
+Route::get('/aktivitas', [pesananController::class, 'akanDatang'])
     ->name('aktivitas');
 
+// Halaman Aktivitas → Berlangsung
 Route::get('/aktivitas-berlangsung', [pesananController::class, 'berlangsung'])
     ->name('aktivitas.berlangsung');
 
+// Halaman Aktivitas → Lampau
 Route::get('/aktivitas-lampau', [pesananController::class, 'lampau'])
     ->name('aktivitas.lampau');
 
 
-/* =======================
-   GABUNG SESI
-======================= */
+/* ============================
+   GABUNG SESI BERLANGSUNG
+============================ */
 Route::get('/berlangsung/gabung-sesi', [pesananController::class, 'gabungSesi'])
     ->name('sesi.berlangsung');
 
@@ -56,9 +50,9 @@ Route::get('/berlangsung/end-call', [pesananController::class, 'endCall'])
     ->name('sesi.selesai');
 
 
-/* =======================
+/* ============================
    PESANAN
-======================= */
+============================ */
 Route::get('/pesanan/detail-pesanan', [SesiController::class, 'lihatDetailPesanan'])
     ->name('pesanan.detail');
 
@@ -75,17 +69,17 @@ Route::get('/konfirmasi-trial', [pesananController::class, 'berhasilTrial'])
     ->name('trial.berhasil');
 
 
-/* =======================
-   CHAT PAGE
-======================= */
+/* ============================
+   CHAT
+============================ */
 Route::get('/chat', function () {
-    return view('Chat');   // resources/views/Chat.blade.php
+    return view('Chat');
 })->name('chat');
 
 
-/* =======================
-   PROFILE PAGE (BARU)
-======================= */
+/* ============================
+   PROFILE
+============================ */
 Route::get('/profile', function () {
-    return view('Profile');   // resources/views/Profile.blade.php
+    return view('Profile');
 })->name('profile');

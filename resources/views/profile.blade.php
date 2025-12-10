@@ -60,8 +60,17 @@
 <div class="container mt-4">
 
     <div class="text-center">
-        <img src="/foto-tutor2.jpg" class="profile-photo">
+
+        {{-- FOTO USER --}}
+        <img 
+            src="/foto-tutor2.jpg" 
+            class="profile-photo"
+        >
+
+        {{-- NAMA USER --}}
         <div class="profile-name">Sasha</div>
+
+        {{-- EMAIL USER --}}
         <div class="profile-email">sahahahahaha@gmail.com</div>
     </div>
 
