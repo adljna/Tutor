@@ -1,82 +1,59 @@
 <?php
+
 namespace App\Http\Controllers;
 use Illuminate\Http\Request;
-use App\Models\Sesi;
-use App\Models\Tutor;
-use App\Models\Matakuliah;
 use Illuminate\Support\Facades\DB;
 
-//Harya Raditya Handoyo - 5026231176
-//Nailah Adlina - 5026231068
+// Harya Raditya Handoyo - 5026231176
+// Nailah Adlina - 5026231068
 
 class tutorController extends Controller
 {
+    // Helper private biar tidak perlu tulis query rating berulang kali
+    private function attachRating($tutor)
+    {
+        foreach ($tutor as $t) {
+            $t->ratingtutor  = DB::table('review')
+                ->join('pesanan', 'review.idpesanan', '=', 'pesanan.idpesanan')
+                ->join('sesi', 'pesanan.idsesi', '=', 'sesi.idsesi')
+                ->where('sesi.idtutor', $t->idtutor)
+                ->avg('review.rating') ?? 0;
+
+            $t->total_review = DB::table('review')
+                ->join('pesanan', 'review.idpesanan', '=', 'pesanan.idpesanan')
+                ->join('sesi', 'pesanan.idsesi', '=', 'sesi.idsesi')
+                ->where('sesi.idtutor', $t->idtutor)
+                ->count();
+        }
+        return $tutor;
+    }
+
     public function recTutor()
     {
-        $tutor = DB::table('tutor as t')
-            ->leftJoin('sesi as s', 's.idtutor', '=', 't.idtutor')
-            ->leftJoin('pesanan as p', 'p.idsesi', '=', 's.idsesi')
-            ->leftJoin('review as r', 'r.idpesanan', '=', 'p.idpesanan')
-            ->select(
-                't.idtutor',
-                't.nama',
-                't.pekerjaan',
-                't.fototutor',
-                DB::raw('COALESCE(AVG(r.rating),0) as ratingtutor'),
-                DB::raw('COUNT(DISTINCT r.idreview) as total_review')
-            )
-            ->groupBy(
-                't.idtutor',
-                't.nama',
-                't.pekerjaan',
-                't.fototutor'
-            )
-            ->orderByDesc('ratingtutor')
-            ->orderByDesc('total_review')
-            ->get();
-
+        $tutor = DB::table('tutor')->get();
+        $tutor = $this->attachRating($tutor);
         return view('List-Tutor', compact('tutor'));
     }
 
     public function profile($id)
     {
-        $tutor = DB::table('tutor as t')
-            ->leftJoin('sesi as s', 's.idtutor', '=', 't.idtutor')
-            ->leftJoin('pesanan as p', 'p.idsesi', '=', 's.idsesi')
-            ->leftJoin('review as r', 'r.idpesanan', '=', 'p.idpesanan')
-            ->where('t.idtutor', $id)
-            ->select(
-                't.idtutor',
-                't.nama',
-                't.pekerjaan',
-                't.deskripsi',
-                't.fototutor',
-                DB::raw('COALESCE(AVG(r.rating), 0) as ratingtutor'),
-                DB::raw('COUNT(DISTINCT r.idreview) as total_review')
-            )
-            ->groupBy(
-                't.idtutor',
-                't.nama',
-                't.pekerjaan',
-                't.deskripsi',
-                't.fototutor'
-            )
-            ->first();
+        $tutor = DB::table('tutor')->where('idtutor', $id)->first();
 
-        if (!$tutor) abort(404);
+        if (!$tutor) {
+            abort(404, 'Tutor tidak ditemukan');
+        }
 
-        $reviews = DB::table('review as r')
-            ->join('pesanan as p', 'p.idpesanan', '=', 'r.idpesanan')
-            ->join('user as u', 'u.userid', '=', 'p.userid')
-            ->join('sesi as s', 's.idsesi', '=', 'p.idsesi')
-            ->where('s.idtutor', $id)
-            ->select(
-                'u.username',
-                'r.rating',
-                'r.komentar',
-                'r.tanggalreview'
-            )
-            ->orderByDesc('r.tanggalreview')
+        // Attach rating untuk tutor ini (bungkus dalam collection dulu)
+        $tutorCollection = collect([$tutor]);
+        $tutorCollection = $this->attachRating($tutorCollection);
+        $tutor = $tutorCollection->first();
+
+        $reviews = DB::table('review')
+            ->join('pesanan', 'review.idpesanan', '=', 'pesanan.idpesanan')
+            ->join('sesi', 'pesanan.idsesi', '=', 'sesi.idsesi')
+            ->join('users', 'pesanan.userid', '=', 'users.id')
+            ->where('sesi.idtutor', $id)
+            ->select('review.*', 'users.name as nama_user')
             ->get();
 
         return view('Profile-Tutor', compact('tutor', 'reviews'));
@@ -84,22 +61,20 @@ class tutorController extends Controller
 
     public function listSesi($idtutor)
     {
-        $tutor = DB::table('tutor')
-            ->where('idtutor', $idtutor)
-            ->first();
+        $tutor = DB::table('tutor')->where('idtutor', $idtutor)->first();
 
-        if (!$tutor) abort(404);
+        if (!$tutor) {
+            abort(404, 'Tutor tidak ditemukan');
+        }
 
-        // ambil semua sesi milik tutor
+        $tutorCollection = collect([$tutor]);
+        $tutorCollection = $this->attachRating($tutorCollection);
+        $tutor = $tutorCollection->first();
+
         $sesi = DB::table('sesi')
             ->join('matakuliah', 'sesi.idmatkul', '=', 'matakuliah.idmatkul')
             ->where('sesi.idtutor', $idtutor)
-            ->select(
-                'sesi.idsesi',
-                'sesi.namaSesi',
-                'sesi.harga',
-                'matakuliah.namamatkul'
-            )
+            ->select('sesi.*', 'matakuliah.namamatkul')
             ->get();
 
         return view('Daftar-Sesi-Tutor', compact('tutor', 'sesi'));

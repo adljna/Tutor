@@ -10,16 +10,16 @@ use App\Http\Controllers\refundController;
 use App\Http\Controllers\reviewController;
 use App\Http\Controllers\tutorController;
 use App\Http\Controllers\userController;
-use App\Http\Controllers\logincontroller;
+use App\Http\Controllers\loginController;
 
 
-Route::get('/', [logincontroller::class, 'index']);
-Route::get('/login', [logincontroller::class, 'login']);
-Route::get('/register', [logincontroller::class, 'register']);
-Route::post('/login', [logincontroller::class, 'handleLogin']);
-Route::post('/register', [logincontroller::class, 'handleRegister']);
-Route::get('/home', [UserController::class, 'home'])->name('home');
-Route::get('/search', [UserController::class, 'search'])->name('search');
+Route::get('/', [loginController::class, 'index']);
+Route::get('/login', [loginController::class, 'login']);
+Route::get('/register', [loginController::class, 'register']);
+Route::post('/login', [loginController::class, 'handleLogin']);
+Route::post('/register', [loginController::class, 'handleRegister']);
+Route::get('/home', [userController::class, 'home'])->name('home');
+Route::get('/search', [userController::class, 'search'])->name('search');
 
 Route::get('/kategori', [kategoriController::class, 'kategori'])->name('kategori');
 Route::get('/kategori/{id}/materi', [matakuliahController::class, 'materi'])->name('materi');

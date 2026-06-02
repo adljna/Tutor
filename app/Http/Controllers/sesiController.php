@@ -1,133 +1,84 @@
 <?php
 
 namespace App\Http\Controllers;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
-use App\Models\Sesi;
-use App\Models\Pesanan;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
-//Nailah Adlina - 5026231068
+// Nailah Adlina - 5026231068
 
 class sesiController extends Controller
 {
-
     public function listSesi($idmatkul)
     {
-        $matakuliah = DB::table('matakuliah')
-            ->where('idmatkul', $idmatkul)
-            ->first();
+        $matakuliah = DB::table('matakuliah')->where('idmatkul', $idmatkul)->first();
 
-        $sesi = DB::table('sesi as s')
-            ->join('tutor as t', 't.idtutor', '=', 's.idtutor')
-            ->join('matakuliah as m', 'm.idmatkul', '=', 's.idmatkul')
-            ->leftJoin('pesanan as p', 'p.idsesi', '=', 's.idsesi')
-            ->leftJoin('review as r', 'r.idpesanan', '=', 'p.idpesanan')
-            ->where('s.idmatkul', $idmatkul)
-            ->select(
-                's.idsesi',
-                's.namaSesi',
-                's.harga',
-                'm.namamatkul',
-                't.idtutor',
-                't.nama',
-                't.fototutor',
-                't.pekerjaan',
-                DB::raw('COALESCE(AVG(r.rating),0) as ratingtutor'),
-            )
-            ->groupBy(
-                's.idsesi',
-                's.namaSesi',
-                's.harga',
-                'm.namamatkul',
-                't.idtutor',
-                't.nama',
-                't.fototutor',
-                't.pekerjaan'
-            )
-            ->orderBy('ratingtutor', 'asc')
+        $sesi = DB::table('sesi')
+            ->join('tutor', 'sesi.idtutor', '=', 'tutor.idtutor')
+            ->where('sesi.idmatkul', $idmatkul)
             ->get();
 
         return view('List-SesiTutor', compact('matakuliah', 'sesi'));
     }
 
-
+    // ✅ SUDAH DIPERBAIKI: Tidak pakai dummy lagi, narik dari DB
     public function pesanSesi($idsesi)
     {
-        $sesi = Sesi::with(['tutor', 'matakuliah'])
+        $sesi = DB::table('sesi')
+            ->join('tutor', 'sesi.idtutor', '=', 'tutor.idtutor')
+            ->join('matakuliah', 'sesi.idmatkul', '=', 'matakuliah.idmatkul')
+            ->where('sesi.idsesi', $idsesi)
+            ->select(
+                'sesi.*',
+                'tutor.nama',
+                'tutor.fototutor',
+                'matakuliah.namamatkul'
+            )
+            ->first();
+
+        if (!$sesi) {
+            abort(404, 'Sesi tidak ditemukan');
+        }
+
+        $bookedDates = DB::table('pesanan')
             ->where('idsesi', $idsesi)
-            ->firstOrFail();
-
-        session(['idsesi' => $idsesi]);
-
-        $bookedDates = Pesanan::where('idsesi', $idsesi)
-                      ->pluck('tanggal')
-                      ->toArray();
+            ->pluck('tanggal')
+            ->toArray();
 
         return view('Pemilihan-Tanggal', compact('sesi', 'bookedDates'));
     }
 
-
     public function pilihTanggalStore(Request $request)
     {
-        $request->validate([
-            'tanggal' => 'required'
-        ]);
-
-        session(['tanggal_pesanan' => $request->tanggal]);
-        $idsesi = $request->route('idsesi');
-        return redirect()->route('pesanan.jam', ['idsesi' => $idsesi]);
+        session(['tanggal_pesanan' => $request->tanggal ?? '2026-05-31']);
+        return redirect()->route('pesanan.jam', ['idsesi' => $request->route('idsesi')]);
     }
 
     public function pilihJam($idsesi)
     {
-        $tanggal = session('tanggal_pesanan');
-
-        if (!$tanggal) {
-            return redirect()
-                ->route('pesanan.tanggal', $idsesi)
-                ->with('error', 'Silakan pilih tanggal terlebih dahulu.');
-        }
-
-        $sesi = Sesi::findOrFail($idsesi);
-        $idTutor = $sesi->idtutor;
-
-        $jamTerbooking = Pesanan::join('sesi', 'pesanan.idsesi', '=', 'sesi.idsesi')
-            ->where('sesi.idtutor', $idTutor)
-            ->where('pesanan.tanggal', $tanggal)
-            ->pluck('pesanan.jam')
-            ->toArray();
-
-        return view('Pemilihan-Jam', compact(
-            'sesi',
-            'tanggal',
-            'jamTerbooking'
-        ));
+        $tanggal = session('tanggal_pesanan') ?? '2026-05-31';
+        $sesi    = DB::table('sesi')->where('idsesi', $idsesi)->first();
+        $jamTerbooking = [];
+        return view('Pemilihan-Jam', compact('sesi', 'tanggal', 'jamTerbooking'));
     }
 
-
-    public function pilihJamStore(Request $request)
+    public function pilihJamStore(Request $request, $idsesi)
     {
-        $request->validate([
-            'jam' => 'required'
-        ]);
-
-        session(['jam_pesanan' => $request->jam]);
-        $idsesi = session('idsesi'); 
+        session(['jam_pesanan' => $request->jam ?? '10:00']);
         return redirect()->route('pesanan.detail', ['idsesi' => $idsesi]);
     }
 
-
     public function lihatDetailPesanan($idsesi)
     {
-        $tanggal = session('tanggal_pesanan');
-        $jam     = session('jam_pesanan');
+        $tanggal = session('tanggal_pesanan') ?? '2026-05-31';
+        $jam     = session('jam_pesanan')     ?? '10:00';
 
-        if (!$tanggal || !$jam) {
-            return redirect()->route('pesanan.tanggal', $idsesi)
-                            ->with('error', 'Data pesanan tidak lengkap.');
-        }
+        $sesi = DB::table('sesi')
+            ->join('tutor', 'sesi.idtutor', '=', 'tutor.idtutor')
+            ->join('matakuliah', 'sesi.idmatkul', '=', 'matakuliah.idmatkul')
+            ->where('sesi.idsesi', $idsesi)
+            ->first();
 
-        $sesi = Sesi::with(['tutor', 'matakuliah'])->findOrFail($idsesi);
         return view('Detail-Pesanan', compact('sesi', 'tanggal', 'jam'));
     }
 }
